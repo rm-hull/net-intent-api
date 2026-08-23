@@ -9,6 +9,7 @@ import (
 	"github.com/Depado/ginprom"
 	"github.com/cockroachdb/errors"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rm-hull/godx"
@@ -35,7 +36,11 @@ func Start(cfg *config.Config) error {
 		return errors.Wrapf(err, "failed to initialize LLM provider")
 	}
 
-	r := gin.Default()
+	r := gin.New()
+	if cfg.DevMode {
+		cfg.Logger.Warn("pprof endpoints are enabled and exposed. Do not run with this flag in production.")
+		pprof.Register(r)
+	}
 	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
 		return errors.Wrap(err, "failed to trust proxies")
 	}
