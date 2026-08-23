@@ -1,0 +1,76 @@
+name: Build and Test
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download web dist
+        uses: actions/download-artifact@v8
+        with:
+          name: web-dist
+          path: internal/http/web/dist
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.26"
+
+      - name: Cache Go modules & tools
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+            ~/go/bin
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Build
+        run: |
+          go build -ldflags="-w -s" -o net-intent-api .
+
+      - name: Test
+        run: |
+          export PATH=$(go env GOPATH)/bin:$PATH
+          go install gotest.tools/gotestsum@latest
+          mkdir -p ./test-reports/
+          gotestsum --junitfile=./test-reports/junit.xml --format github-actions -- -v -race -coverprofile=profile.cov -coverpkg=./... ./...
+
+      - name: Collect test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: ./test-reports/
+
+      - name: Publish test results
+        uses: mikepenz/action-junit-report@v6
+        if: always()
+        with:
+          report_paths: "./test-reports/junit.xml"
+          comment: true
+          include_passed: true
+          detailed_summary: true
+
+      - name: Upload coverage to Coveralls
+        uses: shogo82148/actions-goveralls@v1
+        continue-on-error: true
+        with:
+          path-to-profile: profile.cov
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
