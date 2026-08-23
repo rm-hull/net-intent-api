@@ -1,10 +1,6 @@
 version: 2
 project_name: net-intent-api
 
-before:
-  hooks:
-    - bash -c "cd web && pnpm install --frozen-lockfile && pnpm build"
-
 builds:
   - env:
       - CGO_ENABLED=0
@@ -39,14 +35,14 @@ changelog:
     - title: Features
       regexp: '^.*?feat(\(.+\))??!?:.+$'
       order: 100
-    - title: 'Bug fixes'
+    - title: "Bug fixes"
       regexp: '^.*?fix(\(.+\))??!?:.+$'
       order: 200
     - title: Others
       order: 999
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
-      - '^chore:'
-      - '^ci:'
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
