@@ -6,6 +6,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	sloggin "github.com/samber/slog-gin"
 )
 
 func ParseLogLevel(level string) slog.Level {
@@ -21,6 +23,14 @@ func ParseLogLevel(level string) slog.Level {
 	default:
 		return slog.LevelInfo
 	}
+}
+
+func NewStructuredLoggingConfig() *sloggin.Config {
+	config := sloggin.DefaultConfig()
+	config.WithUserAgent = true
+	config.WithClientIP = true
+	config.Filters = append(config.Filters, sloggin.IgnorePath("/healthz", "/metrics"))
+	return &config
 }
 
 // ReplaceAttr is a slog.HandlerOptions.ReplaceAttr function that
