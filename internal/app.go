@@ -1,12 +1,15 @@
 package internal
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/Depado/ginprom"
 	"github.com/cockroachdb/errors"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -19,6 +22,7 @@ import (
 )
 
 const DEV_MODE = false // FIXME: replace with env vars
+const HTTP_PORT = 8080
 
 func Server() error {
 
@@ -38,10 +42,10 @@ func Server() error {
 		logger.Warn("No .env file found")
 	}
 	godx.Diagnostics(logger)
-	// logger.Info("Configuration on startup", "config", app.Config)
+	// logger.Info("Configuration on startup", "config", app.Config) // TODO: populate from cmd line
 
 	r := gin.Default()
-	// if err := r.SetTrustedProxies([]string{"192.168.1.2"}); err != nil {
+	// if err := r.SetTrustedProxies([]string{"192.168.1.2"}); err != nil { // TODO: from config
 	// 	return errors.Wrap(err, "failed to trust proxies")
 	// }
 
@@ -60,13 +64,24 @@ func Server() error {
 
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	r.GET("/ping", func(c *gin.Context) {
+	api := r.Group("/v1/net-intent")
+	api.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodOptions},
+		AllowHeaders:     []string{"Authorization", "Content-Type", "X-API-Key"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+	api.GET("/ping", func(c *gin.Context) { // TODO: temporary - walking skeleton
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
 	})
 
-	if err := r.Run(); err != nil {
+	addr := fmt.Sprintf(":%d", HTTP_PORT)
+	logger.Info("Starting HTTP server", "addr", addr)
+	if err := r.Run(addr); err != nil {
 		return errors.Wrap(err, "failed to run server")
 	}
 

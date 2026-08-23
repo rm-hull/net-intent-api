@@ -7,4 +7,4 @@ GET http://localhost:8080/healthz
 
 
 ### Ping
-GET http://localhost:8080/ping
+GET http://localhost:8080/v1/net-intent/ping
