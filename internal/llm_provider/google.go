@@ -14,14 +14,14 @@ type GoogleProvider struct {
 }
 
 func NewGoogleProvider(ctx context.Context, cfg *config.Config) (Provider, error) {
-	client, err := genai.NewClient(ctx, &genai.ClientConfig{APIKey: cfg.APIKey})
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{APIKey: cfg.Gemini.APIKey})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialize Google client")
 	}
 
 	return &GoogleProvider{
 		client: client,
-		model:  cfg.Model,
+		model:  cfg.Gemini.Model,
 	}, nil
 }
 

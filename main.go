@@ -14,19 +14,23 @@ import (
 func main() {
 	_ = godotenv.Load()
 	cliConfig := config.Config{
-		Prompt:   config.Prompt,
 		HttpPort: 8080,
 	}
+
+	cliConfig.Gemini.Prompt = config.Prompt
 
 	var rootCommand = &cobra.Command{
 		Use:   "net-intent-api",
 		Short: "Automated intent scoring API",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !cmd.Flags().Changed("api-key") {
-				cliConfig.APIKey = os.Getenv("GEMINI_API_KEY")
+			if !cmd.Flags().Changed("urlscan-api-key") {
+				cliConfig.UrlScan.APIKey = os.Getenv("URLSCAN_API_KEY")
 			}
-			if !cmd.Flags().Changed("model") {
-				cliConfig.Model = os.Getenv("GEMINI_MODEL")
+			if !cmd.Flags().Changed("gemini-api-key") {
+				cliConfig.Gemini.APIKey = os.Getenv("GEMINI_API_KEY")
+			}
+			if !cmd.Flags().Changed("gemini-model") {
+				cliConfig.Gemini.Model = os.Getenv("GEMINI_MODEL")
 			}
 			if !cmd.Flags().Changed("log-level") {
 				cliConfig.LogLevel = "INFO"
@@ -42,8 +46,9 @@ func main() {
 			return server.Start(&cliConfig)
 		}}
 
-	rootCommand.Flags().StringVar(&cliConfig.APIKey, "api-key", "", "LLM API key")
-	rootCommand.Flags().StringVar(&cliConfig.Model, "model", "", "LLM model")
+	rootCommand.Flags().StringVar(&cliConfig.UrlScan.APIKey, "urlscan-api-key", "", "UrlScan API key")
+	rootCommand.Flags().StringVar(&cliConfig.Gemini.APIKey, "gemini-api-key", "", "Gemini API key")
+	rootCommand.Flags().StringVar(&cliConfig.Gemini.Model, "gemini-model", "", "Gemini model")
 	rootCommand.Flags().BoolVar(&cliConfig.DevMode, "dev-mode", false, "enable dev mode")
 	rootCommand.Flags().IntVar(&cliConfig.HttpPort, "http-port", cliConfig.HttpPort, "HTTP server port")
 	rootCommand.Flags().StringSliceVar(&cliConfig.TrustedProxies, "trusted-proxy", nil, "trusted proxy address; may be repeated")

@@ -7,4 +7,8 @@ GET http://localhost:8080/healthz
 
 
 ### Analyze
-GET http://localhost:8080/v1/net-intent/analyze?domain=doubleclick.net
+GET http://localhost:8080/v1/net-intent/analyze?domain=securepubads.g.doubleclick.net.
+
+
+### UrlScan
+GET http://localhost:8080/v1/net-intent/urlscan?domain=securepubads.g.doubleclick.net.

@@ -18,6 +18,7 @@ import (
 	llmprovider "github.com/rm-hull/net-intent-api/internal/llm_provider"
 	"github.com/rm-hull/net-intent-api/internal/logging"
 	"github.com/rm-hull/net-intent-api/internal/middlewares"
+	"github.com/rm-hull/net-intent-api/internal/urlscan"
 	sloggin "github.com/samber/slog-gin"
 	healthcheck "github.com/tavsec/gin-healthcheck"
 	hc_config "github.com/tavsec/gin-healthcheck/config"
@@ -31,6 +32,7 @@ func Start(cfg *config.Config) error {
 
 	godx.Diagnostics(cfg.Logger)
 
+	urlScanClient := urlscan.NewClient(cfg.UrlScan.APIKey)
 	provider, err := llmprovider.NewProvider(context.Background(), cfg)
 	if err != nil {
 		return errors.Wrapf(err, "failed to initialize LLM provider")
@@ -69,7 +71,9 @@ func Start(cfg *config.Config) error {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-	api.GET("/analyze", middlewares.RequireAnyAuth(middlewares.ProxyAuth(cfg.DevMode)), handlers.Analyze(cfg, provider))
+	auth := middlewares.RequireAnyAuth(middlewares.ProxyAuth(cfg.DevMode))
+	api.GET("/analyze", auth, handlers.Analyze(cfg, provider))
+	api.GET("/urlscan", auth, handlers.UrlScan(urlScanClient))
 
 	addr := fmt.Sprintf(":%d", cfg.HttpPort)
 	cfg.Logger.Info("Starting HTTP server", "addr", addr)

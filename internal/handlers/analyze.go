@@ -22,10 +22,10 @@ func Analyze(cfg *config.Config, provider llmprovider.Provider) gin.HandlerFunc 
 			return
 		}
 
-		result, err := provider.Call(c.Request.Context(), cfg.Prompt, query.Domain)
+		result, err := provider.Call(c.Request.Context(), cfg.Gemini.Prompt, query.Domain)
 		if err != nil {
 			_ = c.Error(err)
-			c.AbortWithStatusJSON(http.StatusBadGateway, gin.H{"error": "invalid query parameters", "details": err.Error()})
+			c.AbortWithStatusJSON(http.StatusBadGateway, gin.H{"error": "failed to analyze: " + query.Domain, "details": err.Error()})
 			return
 		}
 
