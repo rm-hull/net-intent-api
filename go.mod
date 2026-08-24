@@ -1,6 +1,6 @@
 module github.com/rm-hull/net-intent-api
 
-go 1.26.6
+go 1.27
 
 require (
 	github.com/gin-gonic/gin v1.12.0
