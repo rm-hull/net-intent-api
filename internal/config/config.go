@@ -5,14 +5,14 @@ import (
 	"log/slog"
 )
 
-//go:embed prompt.md
-var Prompt string
+//go:embed system_prompt.md
+var SystemPrompt string
 
 type Config struct {
 	Gemini struct {
-		APIKey string
-		Model  string
-		Prompt string
+		APIKey       string
+		Model        string
+		SystemPrompt string
 	}
 	UrlScan struct {
 		APIKey string

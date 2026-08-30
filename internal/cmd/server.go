@@ -74,7 +74,7 @@ func Start(cfg *config.Config) error {
 		MaxAge:           12 * time.Hour,
 	}))
 	auth := middlewares.RequireAnyAuth(middlewares.ProxyAuth(cfg.DevMode))
-	api.GET("/analyze", auth, handlers.Analyze(cfg, provider))
+	api.GET("/analyze", auth, handlers.Analyze(cfg, provider, urlScanService, rdapService))
 	api.GET("/urlscan", auth, handlers.UrlScan(urlScanService))
 	api.GET("/rdap", auth, handlers.RdapHandler(rdapService))
 

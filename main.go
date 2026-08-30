@@ -17,7 +17,7 @@ func main() {
 		HttpPort: 8080,
 	}
 
-	cliConfig.Gemini.Prompt = config.Prompt
+	cliConfig.Gemini.SystemPrompt = config.SystemPrompt
 
 	var rootCommand = &cobra.Command{
 		Use:   "net-intent-api",
