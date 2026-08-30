@@ -19,7 +19,7 @@ import (
 	llmprovider "github.com/rm-hull/net-intent-api/internal/llm_provider"
 	"github.com/rm-hull/net-intent-api/internal/logging"
 	"github.com/rm-hull/net-intent-api/internal/middlewares"
-	"github.com/rm-hull/net-intent-api/internal/urlscan"
+	"github.com/rm-hull/net-intent-api/internal/service/urlscan"
 	sloggin "github.com/samber/slog-gin"
 	healthcheck "github.com/tavsec/gin-healthcheck"
 	hc_config "github.com/tavsec/gin-healthcheck/config"
@@ -34,7 +34,7 @@ func Start(cfg *config.Config) error {
 	godx.Diagnostics(cfg.Logger)
 
 	rdapClient := &rdap.Client{}
-	urlScanClient := urlscan.NewClient(cfg.UrlScan.APIKey)
+	urlScanService := urlscan.NewUrlScanService(cfg.UrlScan.APIKey)
 	provider, err := llmprovider.NewProvider(context.Background(), cfg)
 	if err != nil {
 		return errors.Wrapf(err, "failed to initialize LLM provider")
@@ -75,7 +75,7 @@ func Start(cfg *config.Config) error {
 	}))
 	auth := middlewares.RequireAnyAuth(middlewares.ProxyAuth(cfg.DevMode))
 	api.GET("/analyze", auth, handlers.Analyze(cfg, provider))
-	api.GET("/urlscan", auth, handlers.UrlScan(urlScanClient))
+	api.GET("/urlscan", auth, handlers.UrlScan(urlScanService))
 	api.GET("/rdap", auth, handlers.RdapHandler(rdapClient))
 
 	addr := fmt.Sprintf(":%d", cfg.HttpPort)
