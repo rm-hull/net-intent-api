@@ -12,3 +12,7 @@ GET http://localhost:8080/v1/net-intent/analyze?domain=securepubads.g.doubleclic
 
 ### UrlScan
 GET http://localhost:8080/v1/net-intent/urlscan?domain=securepubads.g.doubleclick.net.
+
+
+### RDAP
+GET http://localhost:8080/v1/net-intent/rdap?domain=html-load.com

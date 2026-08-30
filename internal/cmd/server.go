@@ -11,6 +11,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
+	"github.com/openrdap/rdap"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rm-hull/godx"
 	"github.com/rm-hull/net-intent-api/internal/config"
@@ -32,6 +33,7 @@ func Start(cfg *config.Config) error {
 
 	godx.Diagnostics(cfg.Logger)
 
+	rdapClient := &rdap.Client{}
 	urlScanClient := urlscan.NewClient(cfg.UrlScan.APIKey)
 	provider, err := llmprovider.NewProvider(context.Background(), cfg)
 	if err != nil {
@@ -74,6 +76,7 @@ func Start(cfg *config.Config) error {
 	auth := middlewares.RequireAnyAuth(middlewares.ProxyAuth(cfg.DevMode))
 	api.GET("/analyze", auth, handlers.Analyze(cfg, provider))
 	api.GET("/urlscan", auth, handlers.UrlScan(urlScanClient))
+	api.GET("/rdap", auth, handlers.RdapHandler(rdapClient))
 
 	addr := fmt.Sprintf(":%d", cfg.HttpPort)
 	cfg.Logger.Info("Starting HTTP server", "addr", addr)
