@@ -8,13 +8,20 @@ import (
 	"time"
 )
 
-type Client struct {
+type Client interface {
+	Search(domain string, size int) (*Response, error)
+}
+
+type clientImpl struct {
 	APIKey     string
 	HTTPClient *http.Client
 }
 
-func NewClient(apiKey string) *Client {
-	return &Client{
+// Ensure clientImpl satisfies Clietn
+var _ Client = (*clientImpl)(nil)
+
+func NewClient(apiKey string) Client {
+	return &clientImpl{
 		APIKey: apiKey,
 		HTTPClient: &http.Client{
 			Timeout: 10 * time.Second,
@@ -22,7 +29,7 @@ func NewClient(apiKey string) *Client {
 	}
 }
 
-func (c *Client) Search(domain string, size int) (*Response, error) {
+func (c *clientImpl) Search(domain string, size int) (*Response, error) {
 	domain = strings.TrimSuffix(domain, ".")
 
 	req, err := http.NewRequest("GET", "https://urlscan.io/api/v1/search", nil)

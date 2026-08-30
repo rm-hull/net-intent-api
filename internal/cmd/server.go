@@ -34,7 +34,7 @@ func Start(cfg *config.Config) error {
 	godx.Diagnostics(cfg.Logger)
 
 	rdapClient := &rdap.Client{}
-	urlScanService := urlscan.NewUrlScanService(cfg.UrlScan.APIKey)
+	urlScanService := urlscan.NewUrlScanService(cfg.UrlScan.APIKey, 5*time.Minute)
 	provider, err := llmprovider.NewProvider(context.Background(), cfg)
 	if err != nil {
 		return errors.Wrapf(err, "failed to initialize LLM provider")

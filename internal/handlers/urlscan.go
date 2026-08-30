@@ -16,7 +16,7 @@ func UrlScan(svc *urlscan.Service) gin.HandlerFunc {
 			return
 		}
 
-		result, err := svc.GetLatestResult(query.Domain)
+		result, err := svc.GetLatestResult(c.Request.Context(), query.Domain)
 		if err != nil {
 			_ = c.Error(err)
 			c.AbortWithStatusJSON(http.StatusBadGateway, gin.H{"error": "failed to scan: " + query.Domain, "details": err.Error()})
