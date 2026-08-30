@@ -7,7 +7,7 @@ GET http://localhost:8080/healthz
 
 
 ### Analyze
-GET http://localhost:8080/v1/net-intent/analyze?domain=html-load.com
+GET http://localhost:8080/v1/net-intent/analyze?domain=de0mpg.launches.appsflyersdk.com.
 
 
 ### UrlScan

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	llmprovider "github.com/rm-hull/net-intent-api/internal/clients/llm_provider"
+	urlscan_client "github.com/rm-hull/net-intent-api/internal/clients/urlscan"
 	"github.com/rm-hull/net-intent-api/internal/config"
 	"github.com/rm-hull/net-intent-api/internal/service/rdap"
 	"github.com/rm-hull/net-intent-api/internal/service/urlscan"
@@ -15,7 +16,7 @@ type QueryParams struct {
 	Domain string `form:"domain" binding:"required,fqdn"`
 }
 
-func Analyze(cfg *config.Config, provider llmprovider.Provider, urlscan *urlscan.Service, rdap *rdap.Service) gin.HandlerFunc {
+func Analyze(cfg *config.Config, provider llmprovider.Provider, urlscanService *urlscan.Service, rdapService *rdap.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		var query QueryParams
@@ -24,18 +25,14 @@ func Analyze(cfg *config.Config, provider llmprovider.Provider, urlscan *urlscan
 			return
 		}
 
-		urlScanResult, err := urlscan.GetLatestResult(c.Request.Context(), query.Domain)
+		urlScanResult, err := urlscanService.GetLatestResult(c.Request.Context(), query.Domain)
 		if err != nil {
-			_ = c.Error(err)
-			c.AbortWithStatusJSON(http.StatusBadGateway, gin.H{"error": "failed to scan: " + query.Domain, "details": err.Error()})
-			return
+			urlScanResult = &urlscan_client.Result{}
 		}
 
-		rdapResult, err := rdap.GetDomain(c.Request.Context(), query.Domain)
+		rdapResult, err := rdapService.GetDomain(c.Request.Context(), query.Domain)
 		if err != nil {
-			_ = c.Error(err)
-			c.AbortWithStatusJSON(http.StatusBadGateway, gin.H{"error": "failed to lookup: " + query.Domain, "details": err.Error()})
-			return
+			rdapResult = &rdap.DomainResponse{}
 		}
 
 		userPrompt := gin.H{
