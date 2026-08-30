@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	llmprovider "github.com/rm-hull/net-intent-api/internal/clients/llm_provider"
 	"github.com/rm-hull/net-intent-api/internal/config"
-	llmprovider "github.com/rm-hull/net-intent-api/internal/llm_provider"
 )
 
 type QueryParams struct {
