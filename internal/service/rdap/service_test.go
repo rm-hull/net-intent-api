@@ -148,3 +148,65 @@ func TestGetDomain_ContextCancellation(t *testing.T) {
 		t.Fatalf("expected context.Canceled error, got: %v", err)
 	}
 }
+
+func TestGetDomain_ApexDomainExtraction(t *testing.T) {
+	// Test that subdomains are resolved to apex domains
+	// so that subdomains share the same cache entry
+	mock := &mockClient{result: &rdap.Domain{Handle: "apex"}}
+	svc := &Service{
+		client: mock,
+		cache:  memoize.NewMemoizer(5*time.Minute, 1*time.Minute),
+		ttl:    5 * time.Minute,
+	}
+
+	ctx := context.Background()
+
+	// Call with a subdomain — should be normalized to apex domain
+	_, err := svc.GetDomain(ctx, "www.example.com")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mock.calls != 1 {
+		t.Fatalf("expected 1 upstream call, got %d", mock.calls)
+	}
+
+	// Call with another subdomain of the same apex — should use cache
+	_, err = svc.GetDomain(ctx, "sub.example.com")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mock.calls != 1 {
+		t.Fatalf("expected no additional upstream calls (cached by apex domain), got %d", mock.calls)
+	}
+}
+
+func TestGetDomain_TrailingDotNormalized(t *testing.T) {
+	// Test that trailing dots (FQDN form) are properly stripped
+	// so they match cached entries without trailing dots
+	mock := &mockClient{result: &rdap.Domain{Handle: "apex"}}
+	svc := &Service{
+		client: mock,
+		cache:  memoize.NewMemoizer(5*time.Minute, 1*time.Minute),
+		ttl:    5 * time.Minute,
+	}
+
+	ctx := context.Background()
+
+	// Call with trailing dot
+	_, err := svc.GetDomain(ctx, "example.com.")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mock.calls != 1 {
+		t.Fatalf("expected 1 upstream call, got %d", mock.calls)
+	}
+
+	// Call without trailing dot — should be cache hit
+	_, err = svc.GetDomain(ctx, "example.com")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mock.calls != 1 {
+		t.Fatalf("expected no additional upstream calls (cache hit after dot normalization), got %d", mock.calls)
+	}
+}

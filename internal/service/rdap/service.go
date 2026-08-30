@@ -2,11 +2,13 @@ package rdap
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/kofalt/go-memoize"
 	rdap_domain "github.com/openrdap/rdap"
 	"github.com/rm-hull/net-intent-api/internal/clients/rdap"
+	"golang.org/x/net/publicsuffix"
 )
 
 type Service struct {
@@ -24,14 +26,17 @@ func NewService(ttl time.Duration) *Service {
 }
 
 func (s *Service) GetDomain(ctx context.Context, domain string) (*rdap_domain.Domain, error) {
+	// Extract apex domain before lookup/caching
+	apex := extractApexDomain(domain)
+
 	// Check context cancellation first
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 
 	if s.ttl > 0 {
-		result, err, _ := memoize.Call(s.cache, domain, func() (*rdap_domain.Domain, error) {
-			return s.fetch(ctx, domain)
+		result, err, _ := memoize.Call(s.cache, apex, func() (*rdap_domain.Domain, error) {
+			return s.fetch(ctx, apex)
 		})
 
 		if ctx.Err() != nil {
@@ -45,7 +50,7 @@ func (s *Service) GetDomain(ctx context.Context, domain string) (*rdap_domain.Do
 		return result, nil
 	}
 
-	return s.fetch(ctx, domain)
+	return s.fetch(ctx, apex)
 }
 
 func (s *Service) fetch(ctx context.Context, domain string) (*rdap_domain.Domain, error) {
@@ -54,4 +59,20 @@ func (s *Service) fetch(ctx context.Context, domain string) (*rdap_domain.Domain
 	}
 
 	return s.client.QueryDomain(domain)
+}
+
+// extractApexDomain extracts the registrable apex domain from the input.
+// It handles trailing dots and gracefully falls back to the original
+// domain if apex extraction fails.
+func extractApexDomain(domain string) string {
+	// Trim trailing dots (FQDN form)
+	domain = strings.TrimSuffix(domain, ".")
+
+	apex, err := publicsuffix.EffectiveTLDPlusOne(domain)
+	if err != nil || apex == "" {
+		// Fall back to the original domain if we can't extract apex
+		return domain
+	}
+
+	return apex
 }
