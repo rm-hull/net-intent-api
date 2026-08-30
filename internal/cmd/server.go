@@ -32,6 +32,7 @@ func Start(cfg *config.Config) error {
 	}
 
 	godx.Diagnostics(cfg.Logger)
+	cfg.Logger.Info("Parsed configuration", "config", cfg)
 
 	rdapService := rdap.NewService(5 * time.Minute)
 	urlScanService := urlscan.NewUrlScanService(cfg.UrlScan.APIKey, 5*time.Minute)

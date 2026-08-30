@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path"
+	"reflect"
 	"strings"
 	"time"
 
@@ -63,21 +64,70 @@ func processValue(v any, depth int) any {
 		return v
 	}
 
-	switch val := v.(type) {
+	val := reflect.ValueOf(v)
+	if !val.IsValid() {
+		return v
+	}
+
+	// Handle pointers by dereferencing
+	for val.Kind() == reflect.Pointer {
+		if val.IsNil() {
+			return nil
+		}
+		val = val.Elem()
+	}
+
+	switch vTyped := v.(type) {
 	case time.Duration:
-		return val.String()
+		return vTyped.String()
 	case error:
 		return v
-	case map[string]any:
-		newMap := make(map[string]any, len(val))
-		for k, v := range val {
-			newMap[k] = processValue(v, depth+1)
+	}
+
+	switch val.Kind() {
+	case reflect.Struct:
+		t := val.Type()
+		newMap := make(map[string]any, val.NumField())
+		for i := 0; i < val.NumField(); i++ {
+			fieldType := t.Field(i)
+			if !fieldType.IsExported() {
+				continue
+			}
+
+			name := fieldType.Name
+			tag := fieldType.Tag.Get("json")
+			if tag == "-" {
+				continue
+			}
+			if tag != "" {
+				if idx := strings.Index(tag, ","); idx != -1 {
+					tag = tag[:idx]
+				}
+				if tag != "" {
+					name = tag
+				}
+			}
+
+			fieldVal := val.Field(i).Interface()
+			if fieldType.Tag.Get("log") == "redact" {
+				newMap[name] = "********"
+			} else {
+				newMap[name] = processValue(fieldVal, depth+1)
+			}
 		}
 		return newMap
-	case []any:
-		newSlice := make([]any, len(val))
-		for i, v := range val {
-			newSlice[i] = processValue(v, depth+1)
+	case reflect.Map:
+		newMap := make(map[string]any, val.Len())
+		for _, key := range val.MapKeys() {
+			mapKeyStr := fmt.Sprintf("%v", key.Interface())
+			mapVal := val.MapIndex(key).Interface()
+			newMap[mapKeyStr] = processValue(mapVal, depth+1)
+		}
+		return newMap
+	case reflect.Slice, reflect.Array:
+		newSlice := make([]any, val.Len())
+		for i := 0; i < val.Len(); i++ {
+			newSlice[i] = processValue(val.Index(i).Interface(), depth+1)
 		}
 		return newSlice
 	default:
