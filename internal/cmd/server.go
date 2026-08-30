@@ -11,7 +11,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
-	"github.com/openrdap/rdap"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rm-hull/godx"
 	"github.com/rm-hull/net-intent-api/internal/config"
@@ -19,6 +18,7 @@ import (
 	llmprovider "github.com/rm-hull/net-intent-api/internal/llm_provider"
 	"github.com/rm-hull/net-intent-api/internal/logging"
 	"github.com/rm-hull/net-intent-api/internal/middlewares"
+	"github.com/rm-hull/net-intent-api/internal/service/rdap"
 	"github.com/rm-hull/net-intent-api/internal/service/urlscan"
 	sloggin "github.com/samber/slog-gin"
 	healthcheck "github.com/tavsec/gin-healthcheck"
@@ -33,7 +33,7 @@ func Start(cfg *config.Config) error {
 
 	godx.Diagnostics(cfg.Logger)
 
-	rdapClient := &rdap.Client{}
+	rdapService := rdap.NewService(5 * time.Minute)
 	urlScanService := urlscan.NewUrlScanService(cfg.UrlScan.APIKey, 5*time.Minute)
 	provider, err := llmprovider.NewProvider(context.Background(), cfg)
 	if err != nil {
@@ -76,7 +76,7 @@ func Start(cfg *config.Config) error {
 	auth := middlewares.RequireAnyAuth(middlewares.ProxyAuth(cfg.DevMode))
 	api.GET("/analyze", auth, handlers.Analyze(cfg, provider))
 	api.GET("/urlscan", auth, handlers.UrlScan(urlScanService))
-	api.GET("/rdap", auth, handlers.RdapHandler(rdapClient))
+	api.GET("/rdap", auth, handlers.RdapHandler(rdapService))
 
 	addr := fmt.Sprintf(":%d", cfg.HttpPort)
 	cfg.Logger.Info("Starting HTTP server", "addr", addr)

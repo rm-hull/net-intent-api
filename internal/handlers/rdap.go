@@ -1,16 +1,16 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/openrdap/rdap"
+	domain_rdap "github.com/openrdap/rdap"
+	client "github.com/rm-hull/net-intent-api/internal/clients/rdap"
+	"github.com/rm-hull/net-intent-api/internal/service/rdap"
 )
 
-func RdapHandler(client *rdap.Client) gin.HandlerFunc {
+func RdapHandler(svc *rdap.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		var query QueryParams
@@ -19,22 +19,11 @@ func RdapHandler(client *rdap.Client) gin.HandlerFunc {
 			return
 		}
 
-		if before, found := strings.CutSuffix(query.Domain, "."); found {
-			query.Domain = before
-		}
-
-		resp, err := client.QueryDomain(query.Domain)
+		resp, err := svc.GetDomain(c.Request.Context(), query.Domain)
 		if err != nil {
-
-			if clientErr, ok := errors.AsType[*rdap.ClientError](err); ok {
-				switch clientErr.Type {
-				case rdap.NoWorkingServers:
-					c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "failed to lookup: " + query.Domain, "details": err.Error()})
-					return
-				case rdap.ObjectDoesNotExist:
-					c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "failed to lookup: " + query.Domain, "details": err.Error()})
-					return
-				}
+			if client.ClassifyError(err) {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": client.ErrorMessage(query.Domain, err)})
+				return
 			}
 			_ = c.Error(err)
 			c.AbortWithStatusJSON(http.StatusBadGateway, gin.H{"error": "failed to lookup: " + query.Domain, "details": err.Error()})
@@ -88,7 +77,7 @@ type noticeResponse struct {
 	Description []string `json:"description,omitempty"`
 }
 
-func toDomainResponse(d *rdap.Domain) domainResponse {
+func toDomainResponse(d *domain_rdap.Domain) domainResponse {
 	out := domainResponse{
 		ObjectClassName: "domain",
 		Handle:          d.Handle,
@@ -145,15 +134,3 @@ func toDomainResponse(d *rdap.Domain) domainResponse {
 
 	return out
 }
-
-// func handler(w http.ResponseWriter, r *http.Request) {
-// 	client := &rdap.Client{}
-// 	domain, err := client.QueryDomain(r.URL.Query().Get("domain"))
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusNotFound)
-// 		return
-// 	}
-
-// 	w.Header().Set("Content-Type", "application/rdap+json")
-// 	json.NewEncoder(w).Encode(toDomainResponse(domain))
-// }

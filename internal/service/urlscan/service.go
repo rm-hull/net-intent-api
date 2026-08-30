@@ -27,13 +27,11 @@ func NewUrlScanService(apiKey string, ttl time.Duration) *Service {
 func (s *Service) GetLatestResult(ctx context.Context, domain string) (*urlscan.Result, error) {
 	cacheKey := domain
 
-	// Try cache first if TTL is enabled
 	if s.ttl > 0 {
 		result, err, cached := memoize.Call(s.cache, cacheKey, func() (*urlscan.Result, error) {
-			return s.fetchLatestResult(ctx, domain)
+			return s.fetch(ctx, domain)
 		})
 
-		// If there's a context cancellation error, don't use cache
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
@@ -47,11 +45,10 @@ func (s *Service) GetLatestResult(ctx context.Context, domain string) (*urlscan.
 		return result, nil
 	}
 
-	return s.fetchLatestResult(ctx, domain)
+	return s.fetch(ctx, domain)
 }
 
-func (s *Service) fetchLatestResult(ctx context.Context, domain string) (*urlscan.Result, error) {
-	// Check context cancellation
+func (s *Service) fetch(ctx context.Context, domain string) (*urlscan.Result, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
