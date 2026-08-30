@@ -11,6 +11,7 @@ import (
 type GoogleProvider struct {
 	client *genai.Client
 	model  string
+	temp   float32
 }
 
 func NewGoogleProvider(ctx context.Context, cfg *config.Config) (Provider, error) {
@@ -26,11 +27,11 @@ func NewGoogleProvider(ctx context.Context, cfg *config.Config) (Provider, error
 }
 
 func (provider *GoogleProvider) Call(ctx context.Context, systemPrompt, userPrompt string) (string, error) {
-	config := &genai.GenerateContentConfig{}
-	if systemPrompt != "" {
-		config.SystemInstruction = &genai.Content{
+	config := &genai.GenerateContentConfig{
+		Temperature: &provider.temp,
+		SystemInstruction: &genai.Content{
 			Parts: []*genai.Part{genai.NewPartFromText(systemPrompt)},
-		}
+		},
 	}
 
 	result, err := provider.client.Models.GenerateContent(

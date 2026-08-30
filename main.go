@@ -38,6 +38,7 @@ func main() {
 	rootCommand.Flags().StringVar(&cliConfig.UrlScan.APIKey, "urlscan-api-key", os.Getenv("URLSCAN_API_KEY"), "UrlScan API key")
 	rootCommand.Flags().StringVar(&cliConfig.Gemini.APIKey, "gemini-api-key", os.Getenv("GEMINI_API_KEY"), "Gemini API key")
 	rootCommand.Flags().StringVar(&cliConfig.Gemini.Model, "gemini-model", os.Getenv("GEMINI_MODEL"), "Gemini model")
+	rootCommand.Flags().Float32Var(&cliConfig.Gemini.Temperature, "gemini-temperature", 0.1, "Gemini temperature")
 	rootCommand.Flags().BoolVar(&cliConfig.DevMode, "dev-mode", false, "enable dev mode")
 	rootCommand.Flags().IntVar(&cliConfig.HttpPort, "http-port", cliConfig.HttpPort, "HTTP server port")
 	rootCommand.Flags().StringSliceVar(&cliConfig.TrustedProxies, "trusted-proxy", nil, "trusted proxy address; may be repeated")

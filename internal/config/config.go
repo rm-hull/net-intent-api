@@ -11,6 +11,7 @@ var SystemPrompt string
 type GeminiOpts struct {
 	APIKey       string  `json:"api_key" log:"redact" `
 	Model        string  `json:"model"`
+	Temperature  float32 `json:"temperature"`
 	SystemPrompt string  `json:"-"`
 }
 
