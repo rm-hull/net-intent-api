@@ -5,7 +5,7 @@ go 1.27
 require (
 	github.com/Depado/ginprom v1.8.3
 	github.com/cockroachdb/errors v1.14.0
-	github.com/gin-contrib/cors v1.7.8
+	github.com/gin-contrib/cors v1.7.9
 	github.com/gin-contrib/pprof v1.5.5
 	github.com/gin-gonic/gin v1.12.0
 	github.com/joho/godotenv v1.5.1
