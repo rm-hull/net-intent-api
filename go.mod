@@ -17,7 +17,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/tavsec/gin-healthcheck v1.7.18
 	golang.org/x/net v0.59.0
-	google.golang.org/genai v1.71.0
+	google.golang.org/genai v1.72.0
 )
 
 require (
